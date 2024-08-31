@@ -4,69 +4,106 @@ import shutil
 import time
 import sys
 
-# Função para conectar aos nós escravos via SSH
-def connectToSlaves(slaveIps,slaveHostnames,slavePasswords):
+def connectToSlaves(slaveIps, slaveHostnames, slavePasswords):
+    """
+    Estabelece conexões SSH com uma lista de slaves e retorna um dicionário de clientes SSH.
+    Parâmetros:
+    - slaveIps: Lista de endereços IP dos slaves.
+    - slaveHostnames: Lista de nomes de usuários dos slaves.
+    - slavePasswords: Lista de senhas dos usuários dos slaves.
+    Retorno:
+    - clients: Dicionário onde as chaves são os IPs dos slaves e os valores são os objetos de conexão SSH.
+    """
     clients = {}
     i = 0
     for ip in slaveIps:
         client = paramiko.SSHClient()
         client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        client.connect(ip, username = slaveHostnames[i], password = slavePasswords[i])
+        client.connect(ip, username=slaveHostnames[i], password=slavePasswords[i])
         clients[ip] = client
         i += 1
     return clients
 
-# Função para executar um comando em um nó escravo específico
 def executeSlave(sshClients, slaveIp, command):
+    """
+    Executa um comando em um slave via SSH.
+    Parâmetros:
+    - sshClients: Dicionário de clientes SSH conectados aos slaves.
+    - slaveIp: Endereço IP do slave onde o comando será executado.
+    - command: Comando a ser executado no slave.
+    Retorno:
+    - stdout: Saída do comando.
+    - stderr: Erro, se houver.
+    """
     try:
         stdin, stdout, stderr = sshClients[slaveIp].exec_command(command)
         return stdout.read().decode(), stderr.read().decode()
     except Exception as e:
         return None, str(e)
 
-# Função para listar arquivos no nó mestre
 def listFiles(directory):
+    """
+    Lista os arquivos em um diretório local.
+    Parâmetros:
+    - directory: Caminho do diretório a ser listado.
+    Retorno:
+    - Uma string com os nomes dos arquivos ou uma mensagem de erro.
+    """
     try:
         files = os.listdir(directory)
-        return  "\n".join(files)
-    except Exception as e:
-        return f"Error: {str(e)}"
-    
-# funcao para listar usando filtro de nome
-def listFilesFilter(directory, filter=None):
-    try:
-        directoriesFound = os.listdir(directory)
-        
-        # Inicializa uma lista para armazenar os detalhes dos diretórios filtrados
-        details_list = []
-        
-        # Adiciona diretórios à lista de detalhes com base no filtro especificado
-        for item in directoriesFound:
-            item_path = os.path.join(directory, item)
-            if filter in item and os.path.isdir(item_path):
-                # Obtém informações do diretório
-                stats = os.stat(item_path)
-                size = stats.st_size
-                mod_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(stats.st_mtime))
-                
-                # Cria uma string de detalhes no estilo ls -l
-                details = f"{item: <30} Size: {size} bytes, Modified: {mod_time}"
-                details_list.append(details)
-        
-        return  "\n".join(details_list)
+        return "\n".join(files)
     except Exception as e:
         return f"Error: {str(e)}"
 
-# Função para listar arquivos em todos os nós escravos
-def listFilesSlaves(sshClients, slaveIps, directory): 
+def listFilesFilter(directory, filter=None):
+    """
+    Lista e filtra diretórios em um caminho especificado, retornando detalhes sobre eles.
+    Parâmetros:
+    - directory: Caminho do diretório a ser listado.
+    - filter: Filtro opcional para limitar os resultados aos diretórios que correspondem ao filtro.
+    Retorno:
+    - Uma string com detalhes dos diretórios, no estilo do comando ls -l, filtrados ou uma mensagem de erro.
+    """
+    try:
+        directoriesFound = os.listdir(directory)
+        details_list = []
+        for item in directoriesFound:
+            item_path = os.path.join(directory, item)
+            if filter in item and os.path.isdir(item_path):
+                stats = os.stat(item_path)
+                size = stats.st_size
+                mod_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(stats.st_mtime))
+                details = f"{item: <30} Size: {size} bytes, Modified: {mod_time}"
+                details_list.append(details)
+        return "\n".join(details_list)
+    except Exception as e:
+        return f"Error: {str(e)}"
+
+def listFilesSlaves(sshClients, slaveIps, directory):
+    """
+    Lista arquivos em um diretório específico em vários slaves via SSH.
+    Parâmetros:
+    - sshClients: Dicionário de clientes SSH conectados aos slaves.
+    - slaveIps: Lista de endereços IP dos slaves.
+    - directory: Caminho do diretório a ser listado nos slaves.
+    Retorno:
+    - results: Dicionário contendo a saída e os erros (se houver) de cada slave.
+    """
     results = {}
     for slaveIp in slaveIps:
         output, error = executeSlave(sshClients, slaveIps, f"ls {directory}")
         results[slaveIp] = {"output": output, "error": error}
     return results
 
-# Função para copiar arquivos/diretórios
-def copyFileOrDirectory(source, destination): 
+def copyFileOrDirectory(source, destination):
+    """
+    Copia um arquivo ou diretório para um novo destino.
+    Parâmetros:
+    - source: Caminho da origem do arquivo ou diretório.
+    - destination: Caminho de destino.
+    Retorno:
+    - Uma mensagem de sucesso ou erro.
+    """
     try:
         if os.path.isdir(source):
             shutil.copytree(source, destination)
@@ -76,23 +113,36 @@ def copyFileOrDirectory(source, destination):
     except Exception as e:
         return f"Error: {str(e)}"
 
-# Função para mover arquivos/diretórios
 def moveFileOrDirectory(source, destination):
+    """
+    Move um arquivo ou diretório para um novo destino.
+    Parâmetros:
+    - source: Caminho da origem do arquivo ou diretório.
+    - destination: Caminho de destino.
+    Retorno:
+    - Uma mensagem de sucesso ou erro.
+    """
     try:
         shutil.move(source, destination)
         return "Movido com sucesso!"
     except Exception as e:
         return f"Error: {str(e)}"
 
-# Função para definir permissões em arquivos/diretórios
 def setPermissions(path, permissions):
+    """
+    Define permissões em um arquivo ou diretório.
+    Parâmetros:
+    - path: Caminho do arquivo ou diretório.
+    - permissions: Permissões no formato octal (ex: '0755').
+    Retorno:
+    - Uma mensagem de sucesso ou erro.
+    """
     try:
         os.chmod(path, int(permissions, 8))
         return "Permissions updated"
     except Exception as e:
         return f"Error: {str(e)}"
 
-# Função principal
 def main():
     if len(sys.argv) > 1:
         slaveIps = ['192.168.100.196', '192.168.100.197']
