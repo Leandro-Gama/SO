@@ -153,6 +153,15 @@ def main():
                 print("Diretório não especificado.")
         else:
             print(f"Comando '{cmd_name}' não reconhecido.")
+    
+    else:
+        print("Comandos disponíveis:")
+        print("listFiles <diretório>")
+        print("listFilesFilter <diretório> <filtro>")
+        print("copyFileOrDirectory <origem> <destino>")
+        print("moveFileOrDirectory <origem> <destino>")
+        print("setPermissions <caminho> <permissões>")
+        print("listFilesSlaves <diretório>")        
 
 if __name__ == "__main__":
     main()
