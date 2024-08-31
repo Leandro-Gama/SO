@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import paramiko
 import os
 import shutil
@@ -162,7 +164,7 @@ def main():
         elif cmd_name == 'listFilesFilter':
             if len(sys.argv) > 2:
                 directory = sys.argv[2]
-                filter = sys.argv[3] if len(sys.argv) > 3 else None
+                filter = sys.argv[3] if len(sys.argv) > 3 else ""
                 print(listFilesFilter(directory, filter))
             else:
                 print("Diretório não especificado.")
