@@ -72,7 +72,7 @@ def copyFileOrDirectory(source, destination):
             shutil.copytree(source, destination)
         else:
             shutil.copy2(source, destination)
-        return "\n".join("Copiado com sucesso!")
+        return "Copiado com sucesso!"
     except Exception as e:
         return f"Error: {str(e)}"
 
@@ -80,7 +80,7 @@ def copyFileOrDirectory(source, destination):
 def moveFileOrDirectory(source, destination):
     try:
         shutil.move(source, destination)
-        return "\n".join("Movido com sucesso!")
+        return "Movido com sucesso!"
     except Exception as e:
         return f"Error: {str(e)}"
 
