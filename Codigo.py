@@ -37,13 +37,12 @@ def executeSlave(sshClients, slaveIp, command):
     - stdout: Saída do comando.
     - stderr: Erro, se houver.
     """
-    for ip in slaveIp:
-        try:
-            stdin, stdout, stderr = sshClients[ip].exec_command(command)
-            return stdout.read().decode(), stderr.read().decode()
-        except Exception as e:
-            return None, str(e)
-
+    try:
+        stdin, stdout, stderr = sshClients[slaveIp].exec_command(command)
+        return stdout.read().decode(), stderr.read().decode()
+    except Exception as e:
+        return None, str(e)
+    
 def listFiles(directory):
     """
     Lista os arquivos em um diretório local.
@@ -94,8 +93,9 @@ def listFilesSlaves(sshClients, slaveIps, directory):
     """
     results = {}
     for slaveIp in slaveIps:
-        output, error = executeSlave(sshClients, slaveIps, f"ls {directory}")
+        output, error = executeSlave(sshClients, slaveIp, f"ls {directory}")
         results[slaveIp] = {"output": output, "error": error}
+
     return results
 
 def copyFileOrDirectory(source, destination):
