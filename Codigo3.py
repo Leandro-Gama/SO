@@ -37,11 +37,12 @@ def executeSlave(sshClients, slaveIp, command):
     - stdout: Saída do comando.
     - stderr: Erro, se houver.
     """
-    try:
-        stdin, stdout, stderr = sshClients[slaveIp].exec_command(command)
-        return stdout.read().decode(), stderr.read().decode()
-    except Exception as e:
-        return None, str(e)
+    for ip in slaveIp:
+        try:
+            stdin, stdout, stderr = sshClients[ip].exec_command(command)
+            return stdout.read().decode(), stderr.read().decode()
+        except Exception as e:
+            return None, str(e)
 
 def listFiles(directory):
     """
@@ -130,18 +131,19 @@ def moveFileOrDirectory(source, destination):
     except Exception as e:
         return f"Error: {str(e)}"
 
-def setPermissions(path, permissions):
+def createFile(path, content):
     """
-    Define permissões em um arquivo ou diretório.
+    Cria um arquivo no caminho especificado e escreve o conteúdo fornecido nele.
     Parâmetros:
-    - path: Caminho do arquivo ou diretório.
-    - permissions: Permissões no formato octal (ex: '0755').
+    - path: Caminho completo do arquivo a ser criado.
+    - content: Conteúdo a ser escrito no arquivo.
     Retorno:
     - Uma mensagem de sucesso ou erro.
     """
     try:
-        os.chmod(path, int(permissions, 8))
-        return "Permissions updated"
+        with open(path, 'w') as file:
+            file.write(content)
+        return f"Arquivo '{path}' criado com sucesso!"
     except Exception as e:
         return f"Error: {str(e)}"
 
@@ -185,14 +187,6 @@ def main():
             else:
                 print("Caminhos não especificados.")
 
-        elif cmd_name == 'setPermissions':
-            if len(sys.argv) > 3:
-                path = sys.argv[2]
-                permissions = sys.argv[3]
-                print(setPermissions(path, permissions))
-            else:
-                print("Caminho e/ou permissões não especificados.")
-
         elif cmd_name == 'listFilesSlaves':
             if len(sys.argv) > 2:
                 directory = sys.argv[2]
@@ -203,6 +197,15 @@ def main():
                         print(f"Erro no nó {ip}:\n{result['error']}")
             else:
                 print("Diretório não especificado.")
+
+        elif cmd_name == 'createFile':
+            if len(sys.argv) > 3:
+                path = sys.argv[2]
+                content = sys.argv[3] if len(sys.argv) > 3 else ""
+                print(createFile(path, content))
+            else:
+                print("Caminho do arquivo não especificados.")
+
         else:
             print(f"Comando '{cmd_name}' não reconhecido.")
     
@@ -214,6 +217,7 @@ def main():
         print("moveFileOrDirectory <origem> <destino>")
         print("setPermissions <caminho> <permissões>")
         print("listFilesSlaves <diretório>")        
+        print("createFile <caminho> <conteúdo>")  
 
 if __name__ == "__main__":
     main()
