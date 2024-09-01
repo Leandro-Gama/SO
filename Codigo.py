@@ -215,7 +215,6 @@ def main():
         print("listFilesFilter <diretório> <filtro>")
         print("copyFileOrDirectory <origem> <destino>")
         print("moveFileOrDirectory <origem> <destino>")
-        print("setPermissions <caminho> <permissões>")
         print("listFilesSlaves <diretório>")        
         print("createFile <caminho> <conteúdo>")  
 
